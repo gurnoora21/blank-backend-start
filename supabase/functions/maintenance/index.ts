@@ -13,25 +13,65 @@ serve(async (req) => {
   }
 
   try {
+    const startTime = Date.now();
+    
+    // Log the start of maintenance
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      function: 'maintenance',
+      event: 'maintenance_started'
+    }));
+    
     // Reset expired batches
-    const { data: resetCount } = await supabase
+    const { data: resetCount, error: resetError } = await supabase
       .rpc('reset_expired_batches', { p_expiry_minutes: 30 });
+      
+    if (resetError) throw resetError;
 
     // Requeue dead letter items
-    const { data: requeueCount } = await supabase
+    const { data: requeueCount, error: requeueError } = await supabase
       .rpc('requeue_dead_letter_items', { p_limit: 100 });
+      
+    if (requeueError) throw requeueError;
+    
+    // Clean up completed batches older than 7 days
+    const { data: cleanupCount, error: cleanupError } = await supabase
+      .rpc('cleanup_old_batches', { p_days_old: 7 });
+      
+    if (cleanupError) throw cleanupError;
+    
+    // Log completion
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      function: 'maintenance',
+      event: 'maintenance_completed',
+      latency_ms: Date.now() - startTime,
+      metadata: { 
+        resetCount, 
+        requeueCount,
+        cleanupCount 
+      }
+    }));
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         resetCount, 
-        requeueCount 
+        requeueCount,
+        cleanupCount,
+        duration_ms: Date.now() - startTime
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      function: 'maintenance',
+      event: 'maintenance_error',
+      error: error.message
+    }));
+    
     return new Response(
       JSON.stringify({ error: error.message }), {
         status: 500,

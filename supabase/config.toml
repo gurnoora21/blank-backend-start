@@ -15,3 +15,12 @@ verify_jwt = false
 
 [functions.maintenance]
 verify_jwt = false
+
+[functions.worker]
+verify_jwt = false
+
+[functions.scheduler]
+verify_jwt = false
+
+[functions.monitor]
+verify_jwt = false
