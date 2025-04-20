@@ -1,5 +1,5 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -46,7 +46,7 @@ export class SpotifyClient {
 }
 
 export class GeniusClient {
-  constructor(private accessToken: string = Deno.env.get('GENIUS_ACCESS_TOKEN')!) {}
+  constructor(private accessToken: string = Deno.env.get('GENIUS_CLIENT_ID')!) {}
 
   async fetch(endpoint: string, options: RequestInit = {}) {
     return fetch(`https://api.genius.com${endpoint}`, {
